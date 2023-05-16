@@ -3,9 +3,12 @@ name = "ligai-review"
 version = "0.1.0"
 edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[lib]
+path = "src/lib.rs"
+crate-type = ["cdylib"]
 
 [dependencies]
+flowsnet-platform-sdk = "0.1.4"
 github-flows = "0.5.1"
 ligab = "0.1.2"
 openai-flows = "0.7.1"
