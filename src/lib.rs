@@ -1,7 +1,7 @@
 use flowsnet_platform_sdk::write_error_log;
 use openai_flows::{
     chat::{ChatModel, ChatOptions},
-    OpenAIFlows,
+    FlowsAccount, OpenAIFlows,
 };
 use std::env;
 
@@ -27,6 +27,11 @@ pub async fn run() {
     let client_id = env::var("client_id");
     let secret_key = env::var("secret_key");
 
+    let account = match env::var("chat") {
+        Ok(chat) => FlowsAccount::Provided(chat),
+        Err(_) => FlowsAccount::Default,
+    };
+
     let liga = if let Ok(t) = token {
         Liga::from_token(t)
     } else {
@@ -36,12 +41,19 @@ pub async fn run() {
     };
 
     listen_to_event(&login, &owner, &repo, events, |payload| async {
-        handle(&login, &owner, &repo, liga, payload).await
+        handle(&login, &owner, &repo, liga, account, payload).await
     })
     .await;
 }
 
-async fn handle(login: &GithubLogin, owner: &str, repo: &str, liga: Liga, payload: EventPayload) {
+async fn handle(
+    login: &GithubLogin,
+    owner: &str,
+    repo: &str,
+    liga: Liga,
+    account: FlowsAccount,
+    payload: EventPayload,
+) {
     if let EventPayload::IssueCommentEvent(e) = payload {
         if e.issue.pull_request.is_none() {
             write_error_log!("not pr");
@@ -75,7 +87,7 @@ async fn handle(login: &GithubLogin, owner: &str, repo: &str, liga: Liga, payloa
 
         let title = e.issue.title;
         let pull_number = e.issue.number;
-        let body = get_review(octo, owner, repo, &title, pull_number)
+        let body = get_review(octo, owner, repo, &title, pull_number, account)
             .await
             .unwrap();
 
@@ -114,6 +126,7 @@ async fn get_review(
     repo: &str,
     title: &str,
     pull_number: u64,
+    account: FlowsAccount,
 ) -> Option<String> {
     let pulls = octo.pulls(owner, repo);
 
@@ -147,6 +160,7 @@ async fn get_review(
     }
 
     let mut of = OpenAIFlows::new();
+    of.set_flows_account(account);
     of.set_retry_times(3);
 
     let chat_id = format!("PR#{pull_number}");
