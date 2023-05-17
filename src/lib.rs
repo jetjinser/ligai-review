@@ -63,7 +63,7 @@ async fn handle(
         let comment = e.comment.body.unwrap_or_default();
         let octo = get_octo(login);
 
-        let re = Regex::new(r#"liga#(\w{1,5}-\d+)"#).unwrap();
+        let re = Regex::new(r#"ligaAI#(\w{1,5}-\d+)"#).unwrap();
         let captures = re.captures(&comment);
 
         let issue_number = if let Some(cap) = captures {
@@ -103,7 +103,7 @@ async fn handle(
             if *suc {
                 let url =
                     format!("https://ligai.cn/app/work/table?pid={project_id}&issueid={issue_id}");
-                let body = format!("Review sent!\nplease visit [ligai]({url}) to check it.");
+                let body = format!("Review sent!\nPlease visit [ligaAI]({url}) to check it.");
                 _ = octo.issues(owner, repo).create_comment(number, body).await;
             }
 
