@@ -51,7 +51,7 @@ async fn handle(login: &GithubLogin, owner: &str, repo: &str, liga: Liga, payloa
         let comment = e.comment.body.unwrap_or_default();
         let octo = get_octo(login);
 
-        let re = Regex::new(r#"liga#(\w{1,5}-\d)"#).unwrap();
+        let re = Regex::new(r#"liga#(\w{1,5}-\d+)"#).unwrap();
         let captures = re.captures(&comment);
 
         let issue_number = if let Some(cap) = captures {
