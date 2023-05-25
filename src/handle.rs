@@ -5,7 +5,6 @@ use github_flows::{
 use ligab::Liga;
 use openai_flows::FlowsAccount;
 use regex::Regex;
-use reqwest::header::{HeaderMap, HeaderValue};
 use serde_json::Value;
 
 use crate::review::get_review;
@@ -123,23 +122,15 @@ pub async fn handle(
             let issue_id = data["id"].as_u64().unwrap() as u32;
             let description = data["data"]["description"].as_str().unwrap_or_default();
 
-            let mut header = HeaderMap::new();
-            header.append(
-                "Accept",
-                HeaderValue::from_static("application/vnd.github.patch"),
-            );
-
-            let patch_url = format!("/repos/{owner}/{repo}/compare/{}...{}", before, after);
-            let patch = octo
-                .get_with_headers::<_, _, String>(&patch_url, None, Some(header))
-                .await;
+            let repo = octo.repos(owner, repo);
+            let patch = repo.compare_patch(before, after).await;
 
             let body = if let Ok(p) = patch {
                 get_review(&title, number, p, account)
                     .await
                     .unwrap_or("...".to_string())
             } else {
-                write_error_log!(format!("no patch, {}", patch_url));
+                write_error_log!(format!("no patch"));
                 return;
             };
 
