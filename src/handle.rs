@@ -90,15 +90,19 @@ pub async fn handle(
             return;
         }
 
-        let sha = e.pull_request.head.sha;
+        let number = e.number;
         let octo = get_octo(login);
+
+        _ = octo
+            .issues(owner, repo)
+            .create_comment(number, format!("```\n{:#?}\n```", e))
+            .await;
 
         if let Some(rp) = e.pull_request.repo {
             if let Some(cp_url) = rp.compare_url {
-                let number = e.number;
                 _ = octo
                     .issues(owner, repo)
-                    .create_comment(number, format!("compare_url: {}\nsha: {}", cp_url, sha))
+                    .create_comment(number, format!("compare_url: {}", cp_url))
                     .await;
             } else {
                 write_error_log!("no compare_url");
