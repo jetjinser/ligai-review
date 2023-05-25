@@ -99,16 +99,6 @@ pub async fn handle(
         let number = e.pull_request.number;
 
         if let (Some(before), Some(after)) = (e.before, e.after) {
-            let patch = octo
-                .get::<_, _, String>(
-                    format!("/repos/{owner}/{repo}/compare/{}...{}.patch", before, after),
-                    None,
-                )
-                .await
-                .unwrap_or("...".to_string());
-
-            let body = get_review(&title, number, patch, account).await.unwrap();
-
             let issue_number = store_flows::get(&format!("{}:issue", e.pull_request.id)).unwrap();
             let issue: Value = liga
                 .issue()
@@ -123,6 +113,22 @@ pub async fn handle(
             let data = &issue["data"];
             let issue_id = data["id"].as_u64().unwrap() as u32;
             let description = data["data"]["description"].as_str().unwrap_or_default();
+
+            let patch = octo
+                .get::<_, _, String>(
+                    format!("/repos/{owner}/{repo}/compare/{}...{}.patch", before, after),
+                    None,
+                )
+                .await;
+
+            let body = if let Ok(p) = patch {
+                get_review(&title, number, p, account)
+                    .await
+                    .unwrap_or("...".to_string())
+            } else {
+                write_error_log!("no patch");
+                return;
+            };
 
             let data = serde_json::json!({
                 "description": format!("{}\n> ref: {}\n{}", description, e.pull_request.url, body),
