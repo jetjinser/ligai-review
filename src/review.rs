@@ -1,5 +1,5 @@
 use flowsnet_platform_sdk::write_error_log;
-use github_flows::octocrab::Octocrab;
+use github_flows::octocrab::pulls::PullRequestHandler;
 use openai_flows::{
     chat::{ChatModel, ChatOptions},
     FlowsAccount, OpenAIFlows,
@@ -8,19 +8,14 @@ use openai_flows::{
 use crate::CHAR_SOFT_LIMIT;
 
 pub async fn get_review(
-    octo: &Octocrab,
-    owner: &str,
-    repo: &str,
     title: &str,
     pull_number: u64,
+    patch: String,
     account: FlowsAccount,
 ) -> Option<String> {
-    let pulls = octo.pulls(owner, repo);
-
-    let patch_as_text = pulls.get_patch(pull_number).await.unwrap();
     let mut current_commit = String::new();
     let mut commits: Vec<String> = Vec::new();
-    for line in patch_as_text.lines() {
+    for line in patch.lines() {
         if line.starts_with("From ") {
             // Detected a new commit
             if !current_commit.is_empty() {

@@ -1,5 +1,3 @@
-use std::matches;
-
 use flowsnet_platform_sdk::write_error_log;
 use github_flows::{
     get_octo, octocrab::models::events::payload::PullRequestEventAction, EventPayload, GithubLogin,
@@ -39,6 +37,8 @@ pub async fn handle(
             return;
         };
 
+        store_flows::set(&format!("{}:issue", e.issue.id), issue_number.into(), None);
+
         let issue: Value = liga.issue().get_by_issue_number(issue_number);
 
         let code = issue["code"].as_str().unwrap_or("-1");
@@ -54,7 +54,10 @@ pub async fn handle(
 
         let title = e.issue.title;
         let pull_number = e.issue.number;
-        let body = get_review(octo, owner, repo, &title, pull_number, account)
+
+        let pulls = octo.pulls(owner, repo);
+        let patch_as_text = pulls.get_patch(pull_number).await.unwrap();
+        let body = get_review(&title, pull_number, patch_as_text, account)
             .await
             .unwrap();
 
@@ -90,29 +93,43 @@ pub async fn handle(
             return;
         }
 
-        let number = e.number;
         let octo = get_octo(login);
 
+        let title = e.pull_request.title.unwrap_or("UNTITLED".to_string());
+        let number = e.pull_request.number;
+
         if let (Some(before), Some(after)) = (e.before, e.after) {
-            _ = octo
-                .issues(owner, repo)
-                .create_comment(number, format!("before: {}\nafter: {}", before, after))
-                .await;
+            let patch = octo
+                .patch::<_, _, String>(
+                    format!("/repos/{owner}/{repo}/compare/{}...{}.patch", before, after),
+                    None,
+                )
+                .await
+                .unwrap_or("...".to_string());
+
+            let body = get_review(&title, number, patch, account).await.unwrap();
+
+            let issue_number = store_flows::get(&format!("{}:issue", e.pull_request.id)).unwrap();
+            let issue: Value = liga
+                .issue()
+                .get_by_issue_number(issue_number.as_str().unwrap());
+
+            let code = issue["code"].as_str().unwrap_or("-1");
+            if code != "0" {
+                // Error here
+                return;
+            }
+
+            let data = &issue["data"];
+            let issue_id = data["id"].as_u64().unwrap() as u32;
+            let description = data["data"]["description"].as_str().unwrap_or_default();
+
+            let data = serde_json::json!({
+                "description": format!("{}\n> ref: {}\n{}", description, e.pull_request.url, body),
+            });
+            let _res: Value = liga.issue().update(data, issue_id);
         } else {
             write_error_log!("no before and/or after");
-        }
-
-        if let Some(rp) = e.pull_request.repo {
-            if let Some(cp_url) = rp.compare_url {
-                _ = octo
-                    .issues(owner, repo)
-                    .create_comment(number, format!("compare_url: {}", cp_url))
-                    .await;
-            } else {
-                write_error_log!("no compare_url");
-            }
-        } else {
-            write_error_log!("no repo");
         }
     }
 }

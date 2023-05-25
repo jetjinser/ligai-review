@@ -15,4 +15,5 @@ ligab = "0.1.2"
 openai-flows = "0.7.1"
 regex = "1.8.1"
 serde_json = "1.0.96"
+store-flows = "0.3.1"
 tokio_wasi = { version = "1.25.1", features = ["macros", "rt"] }
