@@ -124,8 +124,6 @@ pub async fn handle(
             let description = data["data"]["description"].as_str().unwrap_or_default();
 
             let mut header = HeaderMap::new();
-            header.append("Host", HeaderValue::from_static("api.github.com"));
-            header.append("User-Agent", HeaderValue::from_static("flows.network"));
             header.append(
                 "Accept",
                 HeaderValue::from_static("application/vnd.github.patch"),
