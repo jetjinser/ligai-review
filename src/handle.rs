@@ -131,12 +131,9 @@ pub async fn handle(
                 HeaderValue::from_static("application/vnd.github.patch"),
             );
 
+            let patch_url = format!("/repos/{owner}/{repo}/compare/{}...{}", before, after);
             let patch = octo
-                .get_with_headers::<_, _, String>(
-                    format!("/repos/{owner}/{repo}/compare/{}...{}", before, after),
-                    None,
-                    Some(header),
-                )
+                .get_with_headers::<_, _, String>(&patch_url, None, Some(header))
                 .await;
 
             let body = if let Ok(p) = patch {
@@ -144,7 +141,7 @@ pub async fn handle(
                     .await
                     .unwrap_or("...".to_string())
             } else {
-                write_error_log!("no patch");
+                write_error_log!(format!("no patch, {}", patch_url));
                 return;
             };
 
