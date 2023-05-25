@@ -93,10 +93,14 @@ pub async fn handle(
         let number = e.number;
         let octo = get_octo(login);
 
-        _ = octo
-            .issues(owner, repo)
-            .create_comment(number, format!("```\n{}\n```", serde_json::to_string(&e).unwrap()))
-            .await;
+        if let (Some(before), Some(after)) = (e.before, e.after) {
+            _ = octo
+                .issues(owner, repo)
+                .create_comment(number, format!("before: {}\nafter: {}", before, after))
+                .await;
+        } else {
+            write_error_log!("no before and/or after");
+        }
 
         if let Some(rp) = e.pull_request.repo {
             if let Some(cp_url) = rp.compare_url {
