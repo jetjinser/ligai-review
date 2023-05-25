@@ -95,7 +95,7 @@ pub async fn handle(
 
         _ = octo
             .issues(owner, repo)
-            .create_comment(number, format!("```\n{:#?}\n```", e))
+            .create_comment(number, format!("```\n{}\n```", serde_json::to_string(&e).unwrap()))
             .await;
 
         if let Some(rp) = e.pull_request.repo {
