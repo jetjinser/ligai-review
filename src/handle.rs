@@ -37,7 +37,11 @@ pub async fn handle(
             return;
         };
 
-        store_flows::set(&format!("{}:issue", e.issue.id), issue_number.into(), None);
+        store_flows::set(
+            &format!("{}:issue", e.issue.node_id),
+            issue_number.into(),
+            None,
+        );
 
         let issue: Value = liga.issue().get_by_issue_number(issue_number);
 
@@ -99,7 +103,11 @@ pub async fn handle(
         let number = e.pull_request.number;
 
         if let (Some(before), Some(after)) = (e.before, e.after) {
-            let issue_number = store_flows::get(&format!("{}:issue", e.pull_request.id)).unwrap();
+            let issue_number = store_flows::get(&format!(
+                "{}:issue",
+                e.pull_request.node_id.unwrap_or("...".to_string())
+            ))
+            .unwrap();
             let issue: Value = liga
                 .issue()
                 .get_by_issue_number(issue_number.as_str().unwrap());
