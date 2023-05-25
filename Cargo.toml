@@ -14,6 +14,7 @@ github-flows = { git = "https://github.com/flows-network/github-flows", branch =
 ligab = "0.1.2"
 openai-flows = "0.7.1"
 regex = "1.8.1"
+reqwest_wasi = "0.11.15"
 serde_json = "1.0.96"
 store-flows = "0.3.1"
 tokio_wasi = { version = "1.25.1", features = ["macros", "rt"] }

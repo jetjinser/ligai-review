@@ -5,6 +5,7 @@ use github_flows::{
 use ligab::Liga;
 use openai_flows::FlowsAccount;
 use regex::Regex;
+use reqwest::header::{HeaderMap, HeaderValue};
 use serde_json::Value;
 
 use crate::review::get_review;
@@ -122,10 +123,19 @@ pub async fn handle(
             let issue_id = data["id"].as_u64().unwrap() as u32;
             let description = data["data"]["description"].as_str().unwrap_or_default();
 
+            let mut header = HeaderMap::new();
+            header.append("Host", HeaderValue::from_static("api.github.com"));
+            header.append("User-Agent", HeaderValue::from_static("flows.network"));
+            header.append(
+                "Accept",
+                HeaderValue::from_static("application/vnd.github.patch"),
+            );
+
             let patch = octo
-                .get::<_, _, String>(
-                    format!("/repos/{owner}/{repo}/compare/{}...{}.patch", before, after),
+                .get_with_headers::<_, _, String>(
+                    format!("/repos/{owner}/{repo}/compare/{}...{}", before, after),
                     None,
+                    Some(header),
                 )
                 .await;
 
