@@ -1,5 +1,4 @@
 use flowsnet_platform_sdk::write_error_log;
-use github_flows::octocrab::pulls::PullRequestHandler;
 use openai_flows::{
     chat::{ChatModel, ChatOptions},
     FlowsAccount, OpenAIFlows,

@@ -100,7 +100,7 @@ pub async fn handle(
 
         if let (Some(before), Some(after)) = (e.before, e.after) {
             let patch = octo
-                .patch::<_, _, String>(
+                .get::<_, _, String>(
                     format!("/repos/{owner}/{repo}/compare/{}...{}.patch", before, after),
                     None,
                 )
